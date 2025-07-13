@@ -36,8 +36,8 @@ public class EmployeeService implements IEmployeeService {
 
 
     @Override
-    public Page<EmployeeResponse> getEmployees() {
-        Page<Employee> employees = _employeeRepository.findAll(PageRequest.of(0, 10));
+    public Page<EmployeeResponse> getEmployees(int page, int size) {
+        Page<Employee> employees = _employeeRepository.findAll(PageRequest.of(page, size));
         return employees.map(this::mapToResponse);
     }
 

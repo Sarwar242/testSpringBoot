@@ -7,7 +7,7 @@ import com.sarwar.test.Model.Dto.Response.EmployeeResponse;
 
 public interface IEmployeeService {
     public EmployeeResponse createEmployee(EmployeeRequest request);
-    public Page<EmployeeResponse> getEmployees();
+    public Page<EmployeeResponse> getEmployees(int page, int size);
     public EmployeeResponse getEmployeeById(Long id);
     public EmployeeResponse updateEmployee(EmployeeRequest request, Long id);
     public boolean deleteEmployee(Long id);

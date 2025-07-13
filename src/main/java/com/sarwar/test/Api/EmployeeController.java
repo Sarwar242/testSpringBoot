@@ -20,8 +20,10 @@ public class EmployeeController {
     }
 
     @GetMapping("/api/v1/employees")
-    public ResponseEntity<Page<EmployeeResponse>> Index(){
-        Page<EmployeeResponse> response = _service.getEmployees();
+    public ResponseEntity<Page<EmployeeResponse>> Index(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size){
+        Page<EmployeeResponse> response = _service.getEmployees(page, size);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
