@@ -1,4 +1,4 @@
-package com.sarwar.test.Model.Entity;
+package com.sarwar.test.model.entity;
 
 import java.util.Date;
 

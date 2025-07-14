@@ -1,8 +1,8 @@
-package com.sarwar.test.Api;
+package com.sarwar.test.api;
 
-import com.sarwar.test.Model.Dto.Request.EmployeeRequest;
-import com.sarwar.test.Model.Dto.Response.EmployeeResponse;
-import com.sarwar.test.Service.Interfaces.IEmployeeService;
+import com.sarwar.test.model.dto.request.EmployeeRequest;
+import com.sarwar.test.model.dto.response.EmployeeResponse;
+import com.sarwar.test.service.interfaces.IEmployeeService;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "http://localhost:4200")
 @RestController
 public class EmployeeController {
     private final IEmployeeService _service;
@@ -47,6 +46,19 @@ public class EmployeeController {
     @DeleteMapping("/api/v1/employee/{id}")
     public ResponseEntity<Boolean> Delete(@PathVariable Long id){
         boolean response = _service.deleteEmployee(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/api/v1/employees/search")
+    public ResponseEntity<Page<EmployeeResponse>> searchEmployees(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) Integer age,
+            @RequestParam(required = false) String birthPlace,
+            @RequestParam(required = false) String dob,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<EmployeeResponse> response = _service.searchEmployees(name, gender, age, birthPlace, dob, page, size);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

@@ -1,4 +1,4 @@
-package com.sarwar.test.Model.Dto.Response;
+package com.sarwar.test.model.dto.response;
 
 import lombok.Data;
 
