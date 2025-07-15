@@ -3,6 +3,7 @@ package com.sarwar.test.service.implementations;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
 import java.text.ParseException;
@@ -33,8 +34,7 @@ public class EmployeeService implements IEmployeeService {
     @Override
     public EmployeeResponse createEmployee(EmployeeRequest request) {
         try {
-            Employee newEmployee = new Employee();
-            _modelMapper.map(request, Employee.class);
+            Employee newEmployee = _modelMapper.map(request, Employee.class);
 
             _employeeRepository.save(newEmployee);
 
@@ -46,7 +46,7 @@ public class EmployeeService implements IEmployeeService {
 
     @Override
     public Page<EmployeeResponse> getEmployees(int page, int size) {
-        Page<Employee> employees = _employeeRepository.findAll(PageRequest.of(page, size));
+        Page<Employee> employees = _employeeRepository.findAll(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC,"id")));
         return employees.map(employee -> _modelMapper.map(employee, EmployeeResponse.class));
     }
 
@@ -58,10 +58,11 @@ public class EmployeeService implements IEmployeeService {
     }
     
     @Override
-    public EmployeeResponse updateEmployee(EmployeeRequest request, Long id) {
-        Employee employee = _employeeRepository.findById(id).orElseThrow(() -> new RuntimeException("Employee not found"));
-        _modelMapper.map(request, Employee.class);
-        
+    public EmployeeResponse updateEmployee(EmployeeRequest request) {
+        Employee employee = _employeeRepository.findById(request.getId())
+            .orElseThrow(() -> new RuntimeException("Employee not found"));
+        _modelMapper.map(request, employee); // <-- Correct mapping
+
         _employeeRepository.save(employee);
         return _modelMapper.map(employee, EmployeeResponse.class);
     }

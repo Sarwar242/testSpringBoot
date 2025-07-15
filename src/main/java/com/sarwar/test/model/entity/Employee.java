@@ -19,7 +19,7 @@ public class Employee {
     private String name;
     @Column(name = "age", nullable = false)
     private int age;
-    @Column(name = "gender", nullable = false)
+    @Column(name = "gender", nullable = true)
     private String gender;
     @Column(name = "dob", nullable = true)
     private Date dob;

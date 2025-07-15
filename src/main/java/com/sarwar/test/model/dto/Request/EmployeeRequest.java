@@ -6,6 +6,7 @@ import java.util.Date;
 
 @Data
 public class EmployeeRequest {
+    private long id;
     private String name;
     private int age;
     private String gender;

@@ -38,9 +38,9 @@ public class EmployeeController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }    
     
-    @PutMapping("/api/v1/employee/{id}")
-    public ResponseEntity<EmployeeResponse> Update(@Valid @RequestBody EmployeeRequest request, @PathVariable Long id){
-        EmployeeResponse response = _service.updateEmployee(request, id);
+    @PutMapping("/api/v1/employee")
+    public ResponseEntity<EmployeeResponse> Update(@Valid @RequestBody EmployeeRequest request){
+        EmployeeResponse response = _service.updateEmployee(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }    
     @DeleteMapping("/api/v1/employee/{id}")
