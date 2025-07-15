@@ -1,16 +1,19 @@
 package com.sarwar.test.model.entity;
 
 import java.util.Date;
+import java.util.Set;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(exclude = "educationDetails")
 public class Employee {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,6 +29,11 @@ public class Employee {
     @Column(name = "birth_place", nullable = true)
     private String birthPlace;
 
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<EmployeeEducation> educationDetails;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+
 }

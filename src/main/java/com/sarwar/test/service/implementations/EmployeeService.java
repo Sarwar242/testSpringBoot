@@ -6,38 +6,71 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.transaction.Transactional;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Calendar;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.Optional;
 
 import com.sarwar.test.model.dto.request.EmployeeRequest;
 import com.sarwar.test.model.dto.response.EmployeeResponse;
 import com.sarwar.test.model.entity.Employee;
+import com.sarwar.test.model.entity.EmployeeEducation;
+import com.sarwar.test.repository.EmployeeEducationRepository;
 import com.sarwar.test.repository.EmployeeRepository;
 import com.sarwar.test.service.interfaces.IEmployeeService;
 import org.springframework.stereotype.Service;
+import com.sarwar.test.model.dto.request.EmployeeEducationRequest;
 
 @Service
 public class EmployeeService implements IEmployeeService {
 
     private EmployeeRepository _employeeRepository;
+    private EmployeeEducationRepository _employeeEducationRepository;
     private ModelMapper _modelMapper;
 
-    public EmployeeService(EmployeeRepository employeeRepository, ModelMapper modelMapper){
+    public EmployeeService(EmployeeRepository employeeRepository, EmployeeEducationRepository employeeEducationRepository, ModelMapper modelMapper){
         _employeeRepository=employeeRepository;
+        _employeeEducationRepository=employeeEducationRepository;
         _modelMapper=modelMapper;
+        _modelMapper.typeMap(EmployeeRequest.class, Employee.class)
+            .addMappings(mapper -> mapper.skip(Employee::setId));
     }
 
     @Override
+    @Transactional
     public EmployeeResponse createEmployee(EmployeeRequest request) {
         try {
+            // Only keep the first occurrence of each education type
+            List<EmployeeEducationRequest> uniqueEducationDetails = new ArrayList<>();
+            Set<Object> types = new HashSet<>();
+            if (request.getEducationDetails() != null) {
+                for (EmployeeEducationRequest eduReq : request.getEducationDetails()) {
+                    if (types.add(eduReq.getType())) {
+                        uniqueEducationDetails.add(eduReq);
+                    }
+                }
+            }
             Employee newEmployee = _modelMapper.map(request, Employee.class);
-
+            // Map education details if present
+            if (!uniqueEducationDetails.isEmpty()) {
+                Set<EmployeeEducation> educationEntities = new HashSet<>();
+                for (EmployeeEducationRequest eduReq : uniqueEducationDetails) {
+                    EmployeeEducation eduEntity = _modelMapper.map(eduReq, EmployeeEducation.class);
+                    eduEntity.setEmployee(newEmployee);
+                    educationEntities.add(eduEntity);
+                }
+                newEmployee.setEducationDetails(educationEntities);
+            }
             _employeeRepository.save(newEmployee);
-
             return _modelMapper.map(newEmployee, EmployeeResponse.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -58,10 +91,72 @@ public class EmployeeService implements IEmployeeService {
     }
     
     @Override
+    @Transactional
     public EmployeeResponse updateEmployee(EmployeeRequest request) {
         Employee employee = _employeeRepository.findById(request.getId())
             .orElseThrow(() -> new RuntimeException("Employee not found"));
-        _modelMapper.map(request, employee); // <-- Correct mapping
+
+        // Only keep the first occurrence of each education type
+        List<EmployeeEducationRequest> uniqueEducationDetails = new ArrayList<>();
+        Set<Object> types = new HashSet<>();
+        if (request.getEducationDetails() != null) {
+            for (EmployeeEducationRequest eduReq : request.getEducationDetails()) {
+                if (types.add(eduReq.getType())) {
+                    uniqueEducationDetails.add(eduReq);
+                }
+            }
+        }
+
+        // Manually update mutable fields (never id)
+        employee.setName(request.getName());
+        employee.setAge(request.getAge());
+        employee.setGender(request.getGender());
+        employee.setDob(request.getDob());
+        employee.setBirthPlace(request.getBirthPlace());
+
+        // Prepare current educations map
+        Set<EmployeeEducation> currentEducations = employee.getEducationDetails() != null
+            ? employee.getEducationDetails()
+            : new HashSet<>();
+        Map<Long, EmployeeEducation> currentById = currentEducations.stream()
+            .filter(e -> e.getId() != null)
+            .collect(Collectors.toMap(EmployeeEducation::getId, e -> e));
+
+        Set<EmployeeEducation> updatedEducations = new HashSet<>();
+        for (EmployeeEducationRequest eduReq : uniqueEducationDetails) {
+            if (eduReq.getId() != null) {
+                // Update existing
+                EmployeeEducation existing = currentById.get(eduReq.getId());
+                if (existing != null) {
+                    // Manually update fields, never id
+                    existing.setType(eduReq.getType());
+                    existing.setInstitutionName(eduReq.getInstitutionName());
+                    existing.setBoard(eduReq.getBoard());
+                    existing.setPassingYear(eduReq.getPassingYear());
+                    existing.setResult(eduReq.getResult());
+                    existing.setScale(eduReq.getScale());
+                    updatedEducations.add(existing);
+                }
+                // else: ignore or throw error if you want strictness
+            } else {
+                // Add new
+                EmployeeEducation newEdu = new EmployeeEducation();
+                newEdu.setType(eduReq.getType());
+                newEdu.setInstitutionName(eduReq.getInstitutionName());
+                newEdu.setBoard(eduReq.getBoard());
+                newEdu.setPassingYear(eduReq.getPassingYear());
+                newEdu.setResult(eduReq.getResult());
+                newEdu.setScale(eduReq.getScale());
+                newEdu.setEmployee(employee);
+                updatedEducations.add(newEdu);
+            }
+        }
+        // Always clear/add to the existing collection, never replace
+        if (employee.getEducationDetails() == null) {
+            employee.setEducationDetails(new HashSet<>());
+        }
+        employee.getEducationDetails().clear();
+        employee.getEducationDetails().addAll(updatedEducations);
 
         _employeeRepository.save(employee);
         return _modelMapper.map(employee, EmployeeResponse.class);
@@ -71,6 +166,14 @@ public class EmployeeService implements IEmployeeService {
     public boolean deleteEmployee(Long id) {
         Employee employee = _employeeRepository.findById(id).orElseThrow(()-> new RuntimeException("Employee not found!"));
         _employeeRepository.delete(employee);
+        
+        return true;
+    }
+    
+    @Override
+    public boolean deleteEmployeeEducation(Long id) {
+        EmployeeEducation employeeEducation = _employeeEducationRepository.findById(id).orElseThrow(()-> new RuntimeException("Employee not found!"));
+        _employeeEducationRepository.delete(employeeEducation);
         
         return true;
     }

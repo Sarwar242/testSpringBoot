@@ -11,6 +11,7 @@ public interface IEmployeeService {
     public EmployeeResponse getEmployeeById(Long id);
     public EmployeeResponse updateEmployee(EmployeeRequest request);
     public boolean deleteEmployee(Long id);
+    public boolean deleteEmployeeEducation(Long id);
     public Page<EmployeeResponse> searchEmployees(String name, String gender, Integer age, String birthPlace,
             String dob, int page, int size);
 }

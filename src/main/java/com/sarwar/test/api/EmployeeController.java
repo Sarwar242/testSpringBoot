@@ -47,6 +47,12 @@ public class EmployeeController {
     public ResponseEntity<Boolean> Delete(@PathVariable Long id){
         boolean response = _service.deleteEmployee(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }    
+    
+    @DeleteMapping("/api/v1/employee-education/{id}")
+    public ResponseEntity<Boolean> DeleteEducation(@PathVariable Long id){
+        boolean response = _service.deleteEmployeeEducation(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/api/v1/employees/search")
